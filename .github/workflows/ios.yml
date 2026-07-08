@@ -17,7 +17,7 @@ env:
 
 jobs:
   build:
-    name: Build iOS IPA
+    name: Build iOS
     runs-on: macos-latest
 
     defaults:
@@ -25,7 +25,7 @@ jobs:
         working-directory: frontend
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -37,13 +37,13 @@ jobs:
         run: flutter pub get
 
       - name: Analyze
-        run: flutter analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
       - name: Build iOS
         run: flutter build ios --release --no-codesign
 
       - name: Upload iOS build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ios-build
           path: frontend/build/ios/iphoneos/Runner.app

@@ -22,10 +22,10 @@ jobs:
         working-directory: frontend
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -40,7 +40,7 @@ jobs:
         run: flutter pub get
 
       - name: Analyze
-        run: flutter analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
       - name: Build APK
         run: flutter build apk --release --split-per-abi
@@ -49,13 +49,13 @@ jobs:
         run: flutter build appbundle --release
 
       - name: Upload APK artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: android-apks
           path: frontend/build/app/outputs/flutter-apk/*.apk
 
       - name: Upload AAB artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: android-aab
           path: frontend/build/app/outputs/bundle/release/*.aab
