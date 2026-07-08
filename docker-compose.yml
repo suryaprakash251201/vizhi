@@ -1,0 +1,71 @@
+version: "3.9"
+
+services:
+  vizhi-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vizhi
+    restart: unless-stopped
+
+    # Host PID namespace — required to see/list/kill host processes, collect /proc stats
+    pid: "host"
+
+    # Network: host mode so D-Bus and X11 sockets resolve correctly.
+    # If you prefer bridge mode, you must additionally map ports and pass
+    # DBUS_SESSION_BUS_ADDRESS + XDG_RUNTIME_DIR env vars with correct host paths.
+    network_mode: "host"
+
+    volumes:
+      # Mount /proc for gopsutil to read host metrics (CPU, memory, disk, etc.)
+      - /proc:/host/proc:ro
+
+      # D-Bus system bus — needed for launching GUI apps on the host
+      - /run/dbus:/run/dbus:ro
+
+      # D-Bus session bus for the desktop user (adjust UID 1000 to match your login user)
+      - /run/user/1000/bus:/run/user/1000/bus:ro
+
+      # X11 socket for GUI apps
+      - /tmp/.X11-unix:/tmp/.X11-unix:ro
+
+      # XDG_RUNTIME_DIR for the desktop user
+      - /run/user/1000:/run/user/1000:ro
+
+      # Persistent upload storage
+      - vizhi-data:/data/uploads
+
+      # TLS certificates (generate before starting)
+      - ./tls:/data/tls:ro
+
+    environment:
+      VIZHI_HOST: "0.0.0.0"
+      VIZHI_PORT: "8443"
+      VIZHI_JWT_SECRET: "${VIZHI_JWT_SECRET:?must be set}"
+      VIZHI_MASTER_PASSWORD_HASH: "${VIZHI_MASTER_PASSWORD_HASH:?must be set}"
+      VIZHI_ALLOWED_UID: "1000"
+      VIZHI_ALLOWED_GID: "1000"
+      VIZHI_ALLOWED_APPS: "firefox,chromium,nautilus,gnome-terminal,code,gedit,vlc,thunderbird"
+      VIZHI_UPLOAD_DIR: "/data/uploads"
+      VIZHI_MAX_UPLOAD_SIZE: "524288000"
+      VIZHI_TLS_ENABLED: "true"
+      VIZHI_TLS_CERT: "/data/tls/server.crt"
+      VIZHI_TLS_KEY: "/data/tls/server.key"
+      VIZHI_LOG_LEVEL: "info"
+      # Propagate host display and session bus
+      DISPLAY: ":0"
+      DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/1000/bus"
+      XDG_RUNTIME_DIR: "/run/user/1000"
+      HOME: "/home/${VIZHI_HOST_USER:-user}"
+
+    # Security: drop all capabilities; no new privileges
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+
+volumes:
+  vizhi-data:

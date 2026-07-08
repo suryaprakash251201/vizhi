@@ -1,0 +1,48 @@
+name: Backend Build
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/**'
+  workflow_dispatch:
+
+env:
+  GO_VERSION: '1.22'
+
+jobs:
+  build:
+    name: Build Go Backend
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Download deps
+        run: go mod download
+
+      - name: Build
+        run: go build -ldflags="-s -w" -o vizhi-server ./cmd/vizhi-server
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vizhi-server-linux-amd64
+          path: backend/vizhi-server

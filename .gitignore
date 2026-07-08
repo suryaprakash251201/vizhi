@@ -1,0 +1,40 @@
+# Dart / Flutter
+frontend/.dart_tool/
+frontend/.packages
+frontend/build/
+frontend/.flutter-plugins*
+frontend/ios/Pods/
+frontend/ios/.symlinks/
+frontend/android/.gradle/
+frontend/android/local.properties
+frontend/android/key.properties
+frontend/android/app/*.jks
+frontend/android/app/*.keystore
+frontend/android/captures/
+frontend/.idea/
+frontend/*.iml
+frontend/pubspec.lock
+
+# Go
+backend/bin/
+backend/vendor/
+backend/*.exe
+
+# TLS (self-signed certs for dev)
+tls/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+*.env
