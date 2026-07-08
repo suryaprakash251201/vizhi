@@ -1,13 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io' as io;
-import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:web_socket_channel/io.dart';
 import '../models/system_stats.dart';
 
 enum WsConnectionState { disconnected, connecting, connected }
 
 class WsService {
-  WebSocketChannel? _channel;
+  IOWebSocketChannel? _channel;
   WsConnectionState _state = WsConnectionState.disconnected;
   final _statsController = StreamController<SystemStats>.broadcast();
   final _stateController = StreamController<WsConnectionState>.broadcast();
@@ -40,43 +39,39 @@ class WsService {
     try {
       _state = WsConnectionState.connecting;
       _stateController.add(_state);
-      final ws = io.WebSocket.connect(
-        uri.toString(),
+
+      _channel = IOWebSocketChannel.connect(
+        uri,
         headers: {'Authorization': 'Bearer $_token'},
       );
-      ws.then((socket) {
-        _channel = WebSocketChannel(socket);
-        _state = WsConnectionState.connected;
-        _stateController.add(_state);
-        _statusController.add('Connected');
 
-        _channel!.stream.listen(
-          (data) {
-            try {
-              final msg = jsonDecode(data as String) as Map<String, dynamic>;
-              if (msg['type'] == 'system_stats') {
-                final stats = SystemStats.fromJson(
-                    msg['data'] as Map<String, dynamic>);
-                _statsController.add(stats);
-              }
-            } catch (e) {
-              _statusController.add('Parse error: $e');
+      _state = WsConnectionState.connected;
+      _stateController.add(_state);
+      _statusController.add('Connected');
+
+      _channel!.stream.listen(
+        (data) {
+          try {
+            final msg = jsonDecode(data as String) as Map<String, dynamic>;
+            if (msg['type'] == 'system_stats') {
+              final stats = SystemStats.fromJson(
+                  msg['data'] as Map<String, dynamic>);
+              _statsController.add(stats);
             }
-          },
-          onError: (error) {
-            _statusController.add('WS error: $error');
-            _scheduleReconnect();
-          },
-          onDone: () {
-            _statusController.add('Disconnected');
-            _scheduleReconnect();
-          },
-          cancelOnError: false,
-        );
-      }).catchError((error) {
-        _statusController.add('Connection failed: $error');
-        _scheduleReconnect();
-      });
+          } catch (e) {
+            _statusController.add('Parse error: $e');
+          }
+        },
+        onError: (error) {
+          _statusController.add('WS error: $error');
+          _scheduleReconnect();
+        },
+        onDone: () {
+          _statusController.add('Disconnected');
+          _scheduleReconnect();
+        },
+        cancelOnError: false,
+      );
     } catch (e) {
       _statusController.add('Connection failed: $e');
       _scheduleReconnect();

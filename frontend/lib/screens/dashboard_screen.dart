@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/system_stats.dart';
 import '../providers/stats_provider.dart';
+import '../services/ws_service.dart';
 import '../widgets/stats_card.dart';
 
 class DashboardScreen extends ConsumerWidget {
