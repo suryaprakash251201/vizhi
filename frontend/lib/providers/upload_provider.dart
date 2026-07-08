@@ -161,7 +161,7 @@ class DownloadNotifier extends StateNotifier<DownloadState> {
   Future<void> download(String fileName, String savePath) async {
     state = DownloadState(isDownloading: true, progress: 0);
     try {
-      final file = await _api.downloadFile(fileName, savePath);
+      await _api.downloadFile(fileName, savePath);
       state = DownloadState(isDownloading: false, progress: 1.0);
       _ref.invalidate(fileListProvider);
     } catch (e) {

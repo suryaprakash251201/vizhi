@@ -1,15 +1,16 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' as io;
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../models/system_stats.dart';
 
-enum ConnectionState { disconnected, connecting, connected }
+enum WsConnectionState { disconnected, connecting, connected }
 
 class WsService {
   WebSocketChannel? _channel;
-  ConnectionState _state = ConnectionState.disconnected;
+  WsConnectionState _state = WsConnectionState.disconnected;
   final _statsController = StreamController<SystemStats>.broadcast();
-  final _stateController = StreamController<ConnectionState>.broadcast();
+  final _stateController = StreamController<WsConnectionState>.broadcast();
   final _statusController = StreamController<String>.broadcast();
   Timer? _reconnectTimer;
   String _baseUrl = '';
@@ -17,9 +18,9 @@ class WsService {
   bool _disposed = false;
 
   Stream<SystemStats> get statsStream => _statsController.stream;
-  Stream<ConnectionState> get stateStream => _stateController.stream;
+  Stream<WsConnectionState> get stateStream => _stateController.stream;
   Stream<String> get statusStream => _statusController.stream;
-  ConnectionState get state => _state;
+  WsConnectionState get state => _state;
 
   void connect(String baseUrl, String token) {
     _baseUrl = baseUrl;
@@ -37,41 +38,45 @@ class WsService {
     final uri = Uri.parse('$wsUrl/api/v1/stats/stream');
 
     try {
-      _state = ConnectionState.connecting;
+      _state = WsConnectionState.connecting;
       _stateController.add(_state);
-
-      _channel = WebSocketChannel.connect(
-        uri,
+      final ws = io.WebSocket.connect(
+        uri.toString(),
         headers: {'Authorization': 'Bearer $_token'},
       );
+      ws.then((socket) {
+        _channel = WebSocketChannel(socket);
+        _state = WsConnectionState.connected;
+        _stateController.add(_state);
+        _statusController.add('Connected');
 
-      _state = ConnectionState.connected;
-      _stateController.add(_state);
-      _statusController.add('Connected');
-
-      _channel!.stream.listen(
-        (data) {
-          try {
-            final msg = jsonDecode(data as String) as Map<String, dynamic>;
-            if (msg['type'] == 'system_stats') {
-              final stats = SystemStats.fromJson(
-                  msg['data'] as Map<String, dynamic>);
-              _statsController.add(stats);
+        _channel!.stream.listen(
+          (data) {
+            try {
+              final msg = jsonDecode(data as String) as Map<String, dynamic>;
+              if (msg['type'] == 'system_stats') {
+                final stats = SystemStats.fromJson(
+                    msg['data'] as Map<String, dynamic>);
+                _statsController.add(stats);
+              }
+            } catch (e) {
+              _statusController.add('Parse error: $e');
             }
-          } catch (e) {
-            _statusController.add('Parse error: $e');
-          }
-        },
-        onError: (error) {
-          _statusController.add('WS error: $error');
-          _scheduleReconnect();
-        },
-        onDone: () {
-          _statusController.add('Disconnected');
-          _scheduleReconnect();
-        },
-        cancelOnError: false,
-      );
+          },
+          onError: (error) {
+            _statusController.add('WS error: $error');
+            _scheduleReconnect();
+          },
+          onDone: () {
+            _statusController.add('Disconnected');
+            _scheduleReconnect();
+          },
+          cancelOnError: false,
+        );
+      }).catchError((error) {
+        _statusController.add('Connection failed: $error');
+        _scheduleReconnect();
+      });
     } catch (e) {
       _statusController.add('Connection failed: $e');
       _scheduleReconnect();
@@ -79,7 +84,7 @@ class WsService {
   }
 
   void _scheduleReconnect() {
-    _state = ConnectionState.disconnected;
+    _state = WsConnectionState.disconnected;
     _stateController.add(_state);
     _channel = null;
 
@@ -94,7 +99,7 @@ class WsService {
     _reconnectTimer?.cancel();
     _channel?.sink.close();
     _channel = null;
-    _state = ConnectionState.disconnected;
+    _state = WsConnectionState.disconnected;
     _stateController.add(_state);
   }
 

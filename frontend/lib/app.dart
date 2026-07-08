@@ -29,14 +29,14 @@ class VizhiApp extends ConsumerWidget {
   }
 }
 
-class MainShell extends StatefulWidget {
+class MainShell extends ConsumerStatefulWidget {
   const MainShell({super.key});
 
   @override
-  State<MainShell> createState() => _MainShellState();
+  ConsumerState<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends State<MainShell> {
+class _MainShellState extends ConsumerState<MainShell> {
   int _selectedIndex = 0;
 
   static const _screens = <Widget>[
@@ -54,7 +54,7 @@ class _MainShellState extends State<MainShell> {
           IconButton(
             icon: const Icon(Icons.power_settings_new),
             onPressed: () =>
-                context.read(authProvider.notifier).logout(),
+                ref.read(authProvider.notifier).logout(),
             tooltip: 'Disconnect',
           ),
         ],

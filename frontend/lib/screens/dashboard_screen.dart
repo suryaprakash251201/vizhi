@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/system_stats.dart';
-import '../providers/auth_provider.dart';
 import '../providers/stats_provider.dart';
 import '../widgets/stats_card.dart';
 
@@ -49,10 +48,10 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildConnectionBanner(AsyncValue<ConnectionState> wsState) {
+  Widget _buildConnectionBanner(AsyncValue<WsConnectionState> wsState) {
     return wsState.when(
       data: (state) {
-        if (state == ConnectionState.connected) {
+        if (state == WsConnectionState.connected) {
           return const Card(
             color: Colors.green,
             child: Padding(

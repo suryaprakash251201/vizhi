@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/system_stats.dart';
-import '../services/api_service.dart';
 import '../services/ws_service.dart';
 import 'auth_provider.dart';
 
@@ -15,7 +14,7 @@ final statsProvider = StreamProvider<SystemStats>((ref) {
   return ws.statsStream;
 });
 
-final wsConnectionProvider = StreamProvider<ConnectionState>((ref) {
+final wsConnectionProvider = StreamProvider<WsConnectionState>((ref) {
   final ws = ref.watch(wsServiceProvider);
   return ws.stateStream;
 });
